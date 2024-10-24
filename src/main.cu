@@ -6,7 +6,7 @@ int main(int argc, char *argv[]) {
 	int device_count;
 	cudaGetDeviceCount(&device_count);
 
-	for (int i = 0; i < device_count; i++) {
+	for (int device = 0; device < device_count; device++) {
 		cudaDeviceProp prop;
         cudaGetDeviceProperties(&prop, device);
 
