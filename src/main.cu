@@ -12,9 +12,9 @@ __managed__ pixel_t *pixels;
 
 __device__ pixel_t pixel_from_rgb(int r, int g, int b) {
 	pixel_t pixel;
-	pixel  = r << 0;
+	pixel  = b << 0;
 	pixel |= g << 8;
-	pixel |= b << 16;
+	pixel |= r << 16;
 	// pixel |= a << 24;
 
 	return pixel;
@@ -25,11 +25,10 @@ __global__ void fill_pixels(pixel_t *pixels) {
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
 
 	pixel_t color;
-	if (threadIdx.x % 8 == 0) {
-		color = 255; // pixel_from_rgb(255, 0, 0);
+	if ((threadIdx.x + threadIdx.y) % 8 == 0) {
+		color = pixel_from_rgb(255, 0, 0);
 	} else {
-		// color = pixel_from_rgb(0, 0, 255);
-		color = 0;
+		color = pixel_from_rgb(0, 0, 0);
 	}
 	
 	int width = gridDim.x * blockDim.x;
@@ -89,7 +88,7 @@ int main(int argc, char *argv[]) {
 	cudaDeviceSynchronize();
 
 	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(
-		pixels, width, height, 24, width * sizeof(pixel_t),
+		pixels, width, height, 32, width * sizeof(pixel_t),
 		0x00FF0000, 0x0000FF00, 0x000000FF, 0
 	);
 
