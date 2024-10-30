@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     const int height = 600;
 
     // Inicializa a Raylib
-    InitWindow(width, height, "Burning Ship Fractal - Controle Interativo");
+    InitWindow(width, height, "Burning Ship Fractal");
     SetTargetFPS(60);
 
 	SetTraceLogLevel(LOG_NONE);
@@ -64,9 +64,9 @@ int main(int argc, char *argv[]) {
 
     // Defina as coordenadas e escala para o fractal
     double centerX = -1.761485;
-    double centerY = -0.000040;
-    double scale = 0.00003;
-    int max_iterations = 1000; // 12000;
+    double centerY = -0.03; // -0.000040;
+    double scale = 0.0002;
+    int max_iterations = 2000; // 12000;
     const double zoomFactor = 0.9;
     const double panFactorBase = 20.0; // 0.1;
 
@@ -77,10 +77,10 @@ int main(int argc, char *argv[]) {
 
         // Controles de movimentação
         double panFactor = panFactorBase * scale;
+        if (IsKeyDown(KEY_W)) centerY -= panFactor;
+        if (IsKeyDown(KEY_S)) centerY += panFactor;
         if (IsKeyDown(KEY_D)) centerX += panFactor;
         if (IsKeyDown(KEY_A)) centerX -= panFactor;
-        if (IsKeyDown(KEY_W)) centerY -= panFactor; // Movimenta para cima com W
-        if (IsKeyDown(KEY_S)) centerY += panFactor; // Movimenta para baixo com S
 
         // Gera o fractal com os novos valores de centro e escala
         burning_ship_kernel<<<block_dim, thread_dim>>>(pixels, width, height, centerX, centerY, scale, max_iterations);
@@ -93,8 +93,16 @@ int main(int argc, char *argv[]) {
         UnloadImage(image); // Descarrega a imagem já que agora temos a textura
 
         BeginDrawing();
-        ClearBackground(RAYWHITE);
-        DrawTexture(texture, 0, 0, WHITE);
+		{
+			ClearBackground(RAYWHITE);
+			DrawTexture(texture, 0, 0, WHITE);
+
+			/*
+			char zoomText[256];
+			snprintf(zoomText, sizeof(zoomText), "Scale: %lf%%", 1.0 - scale);
+			DrawText(zoomText, 10, 10, 12, WHITE);
+			*/
+		}
         EndDrawing();
 
         UnloadTexture(texture); // Descarrega a textura para regenerar na próxima iteração
