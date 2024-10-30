@@ -1,10 +1,10 @@
 CC = nvcc
-# CFLAGS = -Wall -Wextra -Wpedantic
-LDFLAGS = -lSDL2
+CFLAGS = -I/home/bru/raylib-5.0/include
+LDFLAGS = -L/home/bru/raylib-5.0/lib -lraylib
 
 all: bin src/main.cu
 	# $(CC) $(CFLAGS) src/main.cu $(LDFLAGS) -o bin/main
-	$(CC) src/main.cu $(LDFLAGS) -o bin/main
+	$(CC) src/main.cu $(CFLAGS) $(LDFLAGS) -o bin/main
 
 bin:
 	mkdir bin
