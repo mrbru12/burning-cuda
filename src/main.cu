@@ -3,17 +3,28 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
+#include <string.h>
+
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 640
 
 #define THREADS_PER_BLOCK 256
 
+#define FRACTAL_MAX_ITERATIONS 1000
+#define FRACTAL_CENTERX -1.749816864467520 // -1.75
+#define FRACTAL_CENTERY 0.000008025484745 // -0.035
+#define FRACTAL_SCALE 0.000000043630546 // 0.05
+
+#define FRACTAL_ZOOM_FACTOR 0.95
+#define FRACTAL_PAN_FACTOR 0.05
+
 __managed__ Color *pixels;
 
-__device__ Color fractalColorGradient(int iteration, int max_iterations) {
-	if (iteration == max_iterations) {
-		return BLACK; // Preta para pontos fora do fractal
+__device__ Color fractalColorGradient(int iteration, int maxIterations) {
+	if (iteration == maxIterations) {
+		return BLACK;
 	} 
 
-	// Gradiente de cores suave com função de seno
 	int r = (int)(128.0 + 127.0 * sin(0.16 * iteration + 4));
 	int g = (int)(128.0 + 127.0 * sin(0.16 * iteration + 2));
 	int b = (int)(128.0 + 127.0 * sin(0.16 * iteration + 0));
@@ -21,83 +32,104 @@ __device__ Color fractalColorGradient(int iteration, int max_iterations) {
 	return (Color){ r, g, b, 255 };
 }
 
-__global__ void burning_ship_kernel(Color *pixels, int width, int height, double centerX, double centerY, double scale, int max_iterations) {
+//
+// https://en.wikipedia.org/wiki/Burning_Ship_fractal#Implementation
+// https://paulbourke.net/fractals/burnship/
+//
+__global__ void generateFractalKernel(Color *pixels, int width, int height, double centerX, double centerY, double scale, int maxIterations) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
 
-    if (x < width && y < height) {
-        double zx = 0.0, zy = 0.0;
+	// Mapeamento de x e y para o plano complexo de -2 a +2
+	double cx = centerX + 2.0 * scale * ((double)x / width - 0.5);
+	double cy = centerY + 2.0 * scale * ((double)y / height - 0.5);
 
-        double cx = centerX + ((double)x - (double)width / 2.0) * scale;
-        double cy = centerY + ((double)y - (double)height / 2.0) * scale;
+	double zx = 0.0, zy = 0.0;
 
-        int iteration = 0;
-        while (zx * zx + zy * zy < 4.0 && iteration < max_iterations) {
-            double temp = zx * zx - zy * zy + cx;
-            zy = fabs(2.0 * zx * zy) + cy;
-            zx = temp;
-            iteration++;
-        }
+	int iteration = 0;
+	while (zx * zx + zy * zy < 4.0 && iteration < maxIterations) {
+		double temp = zx * zx - zy * zy + cx;
+		zy = fabs(2.0 * zx * zy) + cy;
+		zx = temp;
 
-        pixels[y * width + x] = fractalColorGradient(iteration, max_iterations);
-    }
+		iteration++;
+	}
+
+	pixels[y * width + x] = fractalColorGradient(iteration, maxIterations);
 }
 
-void calculate_dims(dim3 *block_dim, dim3 *thread_dim, int width, int height) {
-    int thread_row = (int)sqrt(THREADS_PER_BLOCK);
-    *block_dim = dim3((width + thread_row - 1) / thread_row, (height + thread_row - 1) / thread_row);
-    *thread_dim = dim3(thread_row, thread_row);
+Texture2D createFractalTexture(int width, int height) {
+	Image image = GenImageColor(width, height, BLANK);
+	Texture2D texture = LoadTextureFromImage(image);
+	UnloadImage(image);
+
+	return texture;
+}
+
+static dim3 blockCount, threadsPerBlock;
+
+void updateFractalTexture(Texture2D texture, double centerX, double centerY, double scale) {
+	generateFractalKernel<<<blockCount, threadsPerBlock>>>(
+		pixels, texture.width, texture.height, 
+		centerX, centerY, scale, FRACTAL_MAX_ITERATIONS
+	);
+	cudaDeviceSynchronize();
+
+	UpdateTexture(texture, pixels);
+}
+
+void calculateGridSize(dim3 *blockCount, dim3 *threadsPerBlock, int width, int height) {
+    int threadsPerRow = (int)sqrt(THREADS_PER_BLOCK);
+
+    *blockCount = dim3(width / threadsPerRow, height / threadsPerRow);
+    *threadsPerBlock = dim3(threadsPerRow, threadsPerRow);
 }
 
 int main(int argc, char *argv[]) {
-    const int width = 800;
-    const int height = 600;
-
-    // Inicializa a Raylib
-    InitWindow(width, height, "Burning Ship Fractal");
-    SetTargetFPS(60);
-
 	SetTraceLogLevel(LOG_NONE);
+
+    const int width = SCREEN_WIDTH;
+    const int height = SCREEN_HEIGHT;
 
     cudaMallocManaged(&pixels, width * height * sizeof(Color));
 
-    dim3 block_dim, thread_dim;
-    calculate_dims(&block_dim, &thread_dim, width, height);
+    calculateGridSize(&blockCount, &threadsPerBlock, width, height);
 
-    // Defina as coordenadas e escala para o fractal
-    double centerX = -1.761485;
-    double centerY = -0.03; // -0.000040;
-    double scale = 0.0002;
-    int max_iterations = 2000; // 12000;
-    const double zoomFactor = 0.9;
-    const double panFactorBase = 20.0; // 0.1;
+    double centerX = FRACTAL_CENTERX;
+    double centerY = FRACTAL_CENTERY;
+    double scale = FRACTAL_SCALE;
+
+    InitWindow(width, height, "Burning Ship Fractal");
+    SetTargetFPS(60);
+
+	Texture2D texture = createFractalTexture(width, height);
 
     while (!WindowShouldClose()) {
-        // Controles de zoom
-        if (IsKeyDown(KEY_UP)) scale *= zoomFactor;
-        if (IsKeyDown(KEY_DOWN)) scale /= zoomFactor;
+        if (IsKeyDown(KEY_UP)) scale *= FRACTAL_ZOOM_FACTOR;
+        if (IsKeyDown(KEY_DOWN)) scale /= FRACTAL_ZOOM_FACTOR;
 
-        // Controles de movimentação
-        double panFactor = panFactorBase * scale;
+		// scale *= 0.99;
+
+        double panFactor = FRACTAL_PAN_FACTOR * scale;
         if (IsKeyDown(KEY_W)) centerY -= panFactor;
         if (IsKeyDown(KEY_S)) centerY += panFactor;
         if (IsKeyDown(KEY_D)) centerX += panFactor;
         if (IsKeyDown(KEY_A)) centerX -= panFactor;
 
-        // Gera o fractal com os novos valores de centro e escala
-        burning_ship_kernel<<<block_dim, thread_dim>>>(pixels, width, height, centerX, centerY, scale, max_iterations);
-        cudaDeviceSynchronize();
-
-        // Cria uma imagem e textura a partir do array de pixels
-        Image image = GenImageColor(width, height, BLACK);
-        memcpy(image.data, pixels, width * height * sizeof(Color));
-        Texture2D texture = LoadTextureFromImage(image);
-        UnloadImage(image); // Descarrega a imagem já que agora temos a textura
+        updateFractalTexture(texture, centerX, centerY, scale);
 
         BeginDrawing();
 		{
 			ClearBackground(RAYWHITE);
 			DrawTexture(texture, 0, 0, WHITE);
+
+			char info[512];
+			snprintf(
+				info, sizeof(info), 
+				"CenterX: %.15lf\nCenterY: %.15lf\nScale: %.15lf", 
+				centerX, centerY, scale
+			);
+			DrawText(info, 10, 10, 14, WHITE);
 
 			/*
 			char zoomText[256];
@@ -106,9 +138,9 @@ int main(int argc, char *argv[]) {
 			*/
 		}
         EndDrawing();
-
-        UnloadTexture(texture); // Descarrega a textura para regenerar na próxima iteração
     }
+
+	UnloadTexture(texture); // Descarrega a textura para regenerar na próxima iteração
 
     cudaFree(pixels); // Libera a memória CUDA
     CloseWindow(); // Fecha a janela e o contexto OpenGL
