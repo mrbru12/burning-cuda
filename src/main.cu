@@ -8,6 +8,19 @@
 
 __managed__ Color *pixels;
 
+__device__ Color fractalColorGradient(int iteration, int max_iterations) {
+	if (iteration == max_iterations) {
+		return BLACK; // Preta para pontos fora do fractal
+	} 
+
+	// Gradiente de cores suave com função de seno
+	int r = (int)(128.0 + 127.0 * sin(0.16 * iteration + 4));
+	int g = (int)(128.0 + 127.0 * sin(0.16 * iteration + 2));
+	int b = (int)(128.0 + 127.0 * sin(0.16 * iteration + 0));
+
+	return (Color){ r, g, b, 255 };
+}
+
 __global__ void burning_ship_kernel(Color *pixels, int width, int height, double centerX, double centerY, double scale, int max_iterations) {
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -26,18 +39,7 @@ __global__ void burning_ship_kernel(Color *pixels, int width, int height, double
             iteration++;
         }
 
-        Color color;
-        if (iteration == max_iterations) {
-            color = (Color){ 0, 0, 0, 255 }; // Preta para pontos fora do fractal
-        } else {
-            // Gradiente de cores suave com função de seno
-            int r = (int)(128.0 + 127.0 * sin(0.16 * iteration + 4));
-            int g = (int)(128.0 + 127.0 * sin(0.16 * iteration + 2));
-            int b = (int)(128.0 + 127.0 * sin(0.16 * iteration));
-            color = (Color){ r, g, b, 255 };
-        }
-
-        pixels[y * width + x] = color;
+        pixels[y * width + x] = fractalColorGradient(iteration, max_iterations);
     }
 }
 
