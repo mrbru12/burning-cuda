@@ -40,7 +40,7 @@ __global__ void generateFractalKernel(Color *pixels, int width, int height, doub
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
 
-	// Mapeamento de x e y para o plano complexo de -2 a +2
+	// Map x and y to the complex plane
 	double cx = centerX + 2.0 * scale * ((double)x / width - 0.5);
 	double cy = centerY + 2.0 * scale * ((double)y / height - 0.5);
 
@@ -85,6 +85,17 @@ void calculateGridSize(dim3 *blockCount, dim3 *threadsPerBlock, int width, int h
     *threadsPerBlock = dim3(threadsPerRow, threadsPerRow);
 }
 
+void showFractalInfo(double centerX, double centerY, double scale) {
+	char info[512];
+	snprintf(
+		info, sizeof(info), 
+		"CenterX: %.15lf\nCenterY: %.15lf\nScale: %.15lf", 
+		centerX, centerY, scale
+	);
+
+	DrawText(info, 10, 10, 14, WHITE);
+}
+
 int main(int argc, char *argv[]) {
 	SetTraceLogLevel(LOG_NONE);
 
@@ -108,8 +119,6 @@ int main(int argc, char *argv[]) {
         if (IsKeyDown(KEY_UP)) scale *= FRACTAL_ZOOM_FACTOR;
         if (IsKeyDown(KEY_DOWN)) scale /= FRACTAL_ZOOM_FACTOR;
 
-		// scale *= 0.99;
-
         double panFactor = FRACTAL_PAN_FACTOR * scale;
         if (IsKeyDown(KEY_W)) centerY -= panFactor;
         if (IsKeyDown(KEY_S)) centerY += panFactor;
@@ -121,29 +130,17 @@ int main(int argc, char *argv[]) {
         BeginDrawing();
 		{
 			ClearBackground(RAYWHITE);
+
 			DrawTexture(texture, 0, 0, WHITE);
-
-			char info[512];
-			snprintf(
-				info, sizeof(info), 
-				"CenterX: %.15lf\nCenterY: %.15lf\nScale: %.15lf", 
-				centerX, centerY, scale
-			);
-			DrawText(info, 10, 10, 14, WHITE);
-
-			/*
-			char zoomText[256];
-			snprintf(zoomText, sizeof(zoomText), "Scale: %lf%%", 1.0 - scale);
-			DrawText(zoomText, 10, 10, 12, WHITE);
-			*/
+			showFractalInfo(centerX, centerY, scale);
 		}
         EndDrawing();
     }
 
-	UnloadTexture(texture); // Descarrega a textura para regenerar na próxima iteração
+	UnloadTexture(texture);
 
-    cudaFree(pixels); // Libera a memória CUDA
-    CloseWindow(); // Fecha a janela e o contexto OpenGL
+    cudaFree(pixels);
+    CloseWindow();
 
     return 0;
 }
