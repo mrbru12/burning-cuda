@@ -10,6 +10,8 @@ A Burning Ship fractal implementation in CUDA.
 
 > Steps 1. and 2. can be skipped if you already have raylib installed!
 
+#### Install Dependencies
+
 1. Get the latest release of [raylib]("https://github.com/raysan5/raylib/releases") (mine was v5.0):
 ```bash
 $ wget https://github.com/raysan5/raylib/releases/download/5.0/raylib-5.0_linux_amd64.tar.gz
@@ -24,7 +26,7 @@ $ sudo cp lib/* /usr/local/lib
 $ sudo ldconfig
 ```
 
-3. Clone and build the project:
+#### Clone and build the project:
 ```bash
 $ git clone https://github.com/mrbru12/burning-cuda.git
 $ cd burning-cuda
