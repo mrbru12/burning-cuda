@@ -1,5 +1,7 @@
 #include <cuda_runtime.h>
 #include <raylib.h>
+
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <math.h>
@@ -11,9 +13,9 @@
 #define THREADS_PER_BLOCK 256
 
 #define FRACTAL_MAX_ITERATIONS 1000
-#define FRACTAL_CENTERX -1.749816864467520 // -1.75
-#define FRACTAL_CENTERY 0.000008025484745 // -0.035
-#define FRACTAL_SCALE 0.000000043630546 // 0.05
+#define FRACTAL_CENTERX -1.749816864467520
+#define FRACTAL_CENTERY 0.000008025484745
+#define FRACTAL_SCALE 0.000000043630546
 
 #define FRACTAL_ZOOM_FACTOR 0.95
 #define FRACTAL_PAN_FACTOR 0.05
@@ -96,22 +98,36 @@ void showFractalInfo(double centerX, double centerY, double scale) {
 	DrawText(info, 10, 10, 14, WHITE);
 }
 
+void showHelp(const char *binary) {
+	printf("Usage: %s <centerX> <centerY> <scale>\n", binary); 
+	printf("Example: %s -1.75 -0.035 0.05\n", binary);
+}
+
 int main(int argc, char *argv[]) {
-	SetTraceLogLevel(LOG_NONE);
-
-    const int width = SCREEN_WIDTH;
-    const int height = SCREEN_HEIGHT;
-
-    cudaMallocManaged(&pixels, width * height * sizeof(Color));
-
-    calculateGridSize(&blockCount, &threadsPerBlock, width, height);
-
     double centerX = FRACTAL_CENTERX;
     double centerY = FRACTAL_CENTERY;
     double scale = FRACTAL_SCALE;
 
+	if (argc > 1) {
+		if (argc != 4) {
+			showHelp(argv[0]);
+			exit(1);
+		}
+
+		sscanf(argv[1], "%lf", &centerX);
+		sscanf(argv[2], "%lf", &centerY);
+		sscanf(argv[3], "%lf", &scale);
+	}
+
+    const int width = SCREEN_WIDTH;
+    const int height = SCREEN_HEIGHT;
+
+	SetTraceLogLevel(LOG_NONE);
     InitWindow(width, height, "Burning Ship Fractal");
     SetTargetFPS(60);
+
+    cudaMallocManaged(&pixels, width * height * sizeof(Color));
+    calculateGridSize(&blockCount, &threadsPerBlock, width, height);
 
 	Texture2D texture = createFractalTexture(width, height);
 
