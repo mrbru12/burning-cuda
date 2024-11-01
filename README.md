@@ -9,6 +9,7 @@ A Burning Ship fractal implementation in CUDA.
 ### Any Debian Linux
 
 > This project obviously depends on CUDA Toolkit. If you are having trouble installing it on Linux, I suggest installing it on Windows and using it trough WSL.
+
 > This project depends on Raylib. If you already have it installed, feel free to skip the next section. 
 
 #### Install Dependencies
