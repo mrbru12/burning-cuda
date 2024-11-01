@@ -4,6 +4,12 @@ A Burning Ship fractal implementation in CUDA.
 
 ## Screenshots
 
+<p align="center">
+	<img src="screenshots/screenshot-1730433816.png" alt="Spiral pattern near first armada ship bulbous bow."/>
+	<img src="screenshots/screenshot-1730433841.png" alt="First armada ship."/>
+	<img src="screenshots/screenshot-1730434208.png" alt="Ship from the far left of the armada."/>
+</p>
+
 ## Build from Source
 
 ### Any Debian Linux
