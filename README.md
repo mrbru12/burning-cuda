@@ -1,6 +1,6 @@
 # burning-cuda
 
-A Burning Ship fractal implementation in CUDA.
+A [Burning Ship](https://en.wikipedia.org/wiki/Burning_Ship_fractal) fractal implementation in CUDA.
 
 ## Screenshots
 
