@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
     }
 
 	UnloadTexture(texture);
-
     cudaFree(pixels);
+
     CloseWindow();
 
     return 0;
