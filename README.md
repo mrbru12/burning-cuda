@@ -4,7 +4,7 @@ A Burning Ship fractal implementation in CUDA.
 
 ## Screenshots
 
-<div style="display: flex; flex-direction: row; flex-wrap: wrap">
+<div align="center" style="display: flex; flex-direction: row; flex-wrap: wrap">
 	<img width="49%" src="screenshots/screenshot-1730433841.png" alt="First armada ship."/>
 	<img width="49%" src="screenshots/screenshot-1730434208.png" alt="Ship from the far left of the armada."/>
 	<img width="49%" src="screenshots/screenshot-1730433816.png" alt="Spiral pattern near the first armada ship bulbous bow."/>
