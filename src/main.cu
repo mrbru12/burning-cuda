@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 #include <math.h>
 #include <string.h>
 
@@ -103,6 +104,17 @@ void showHelp(const char *binary) {
 	printf("Example: %s -1.75 -0.035 0.05\n", binary);
 }
 
+void exportTexture(Texture2D texture) {
+	char path[256];
+	snprintf(path, sizeof(path), "screenshot-%ld.png", time(NULL));
+
+	Image image = LoadImageFromTexture(texture);
+	ExportImage(image, path);
+	UnloadImage(image);
+
+	printf("Texture saved to %s\n", path);
+}
+
 int main(int argc, char *argv[]) {
     double centerX = FRACTAL_CENTERX;
     double centerY = FRACTAL_CENTERY;
@@ -140,6 +152,8 @@ int main(int argc, char *argv[]) {
         if (IsKeyDown(KEY_S)) centerY += panFactor;
         if (IsKeyDown(KEY_D)) centerX += panFactor;
         if (IsKeyDown(KEY_A)) centerX -= panFactor;
+
+		if (IsKeyPressed(KEY_SPACE)) exportTexture(texture);
 
         updateFractalTexture(texture, centerX, centerY, scale);
 
