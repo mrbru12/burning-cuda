@@ -8,7 +8,7 @@ A Burning Ship fractal implementation in CUDA.
 
 ### Any Debian Linux
 
-> This project depends on raylib. If you already have it installed, you can skip the next section. 
+> This project depends on raylib. If you already have it installed, feel free to skip the next section. 
 
 #### Install Dependencies
 
